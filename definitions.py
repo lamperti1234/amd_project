@@ -1,6 +1,9 @@
 import json
+import logging
 import os
+
 from pathlib import Path
+from typing import Any
 
 from utils import get_path
 
@@ -12,16 +15,36 @@ TRAINING = get_path(RESULTS, 'training', create=True)
 PREDICTIONS = get_path(RESULTS, 'predictions', create=True)
 
 
-def update_configs():
+def _update_configs():
+    """
+    Read config file.
+
+    :return:
+    """
     path = get_path(CONFIG, 'config.json')
     if os.path.exists(path):
         with open(path) as f:
             config = json.load(f)
-        params.update(config)
+        _params.update(config)
+
+
+def update_config(**kwargs: Any):
+    """
+    Update a variable at runtime.
+
+    :param kwargs: variables that needs to be updated
+    :return:
+    """
+    logging.debug(f'Updated config variables: {kwargs}')
+    _params.update(kwargs)
 
 
 # variables
-params = locals()
-DATASET = None
+_params = locals()
+DATASET = ''
+LOG_FORMAT = '%(levelname)s:%(name)s:%(message)s'
+LOG_LEVEL = logging.INFO
 
-update_configs()
+_update_configs()
+
+logging.basicConfig(format=LOG_FORMAT, level=LOG_LEVEL)

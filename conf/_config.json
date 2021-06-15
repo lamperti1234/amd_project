@@ -1,3 +1,5 @@
 {
-  "DATASET": ""
+  "DATASET": "",
+  "LOG_FORMAT": "%(levelname)s:%(name)s:%(message)s",
+  "LOG_LEVEL": "INFO"
 }
