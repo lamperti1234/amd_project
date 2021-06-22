@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 
 from definitions import CONFIG, DATASETS, DATASET
@@ -6,7 +7,11 @@ from utils import get_path, set_env_variables, is_empty
 
 
 def _set_api():
-    """Setta, se non presente, la chiave necessaria per utilizzare le API di kaggle."""
+    """
+    Set kaggle api required configuration from file or ask for them.
+
+    :return:
+    """
     path = get_path(CONFIG, 'kaggle.json')
     credentials = {}
     if os.path.exists(path):
@@ -20,19 +25,20 @@ def _set_api():
     if not credentials or not credentials['username'] or not credentials['key']:
         credentials['username'] = input("Insert Kaggle username: ")
         credentials['key'] = input("Insert Kaggle API key: ")
-    print('credentials: ', credentials)
     set_env_variables(KAGGLE_USERNAME=credentials['username'], KAGGLE_KEY=credentials['key'])
+    logging.debug('Set environment variables for Kaggle')
 
 
 def download_dataset(name: str, force: bool = False):
-    """Scarica il dataset indicato se non gia' presente.
+    """
+    Download the specified dataset if not already download.
 
-    :param name: nome del dataset
-    :param force: per forzare nuovamente il download del dataset
+    :param name: name of the dataset
+    :param force: force downlaod if dataset already exists
     """
     path = get_path(DATASETS, name, create=True)
     if not is_empty(path) and not force:
-        print(f'Dataset {name} already downloaded!')
+        logging.warning(f'Dataset {name} already downloaded!')
         return
     _set_api()
 
@@ -40,7 +46,7 @@ def download_dataset(name: str, force: bool = False):
     from kaggle import api
 
     api.dataset_download_cli(dataset=name, path=path, force=force, unzip=True)
-    print(f'Dataset {name} downloaded!')
+    logging.info(f'Dataset {name} downloaded!')
 
 
 if __name__ == '__main__':
