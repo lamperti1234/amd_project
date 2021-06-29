@@ -8,6 +8,11 @@ from typing import Any, Union, Callable
 
 
 def delete_path(path: Union[str, Path]) -> None:
+    """
+    Remove folder and all subfolders.
+
+    :param path: path to be removed
+    """
     shutil.rmtree(path, ignore_errors=True)
 
 
@@ -63,6 +68,12 @@ def is_empty(path: Union[str, Path]) -> bool:
 
 
 def timer(func: FunctionType) -> Callable:
+    """
+    Calculating execution time for a specific function.
+
+    :param func: function to be executed
+    :return: wrapper for the function
+    """
     def wrapper(*args, **kwargs) -> Any:
         start = datetime.now()
         result = func(*args, **kwargs)

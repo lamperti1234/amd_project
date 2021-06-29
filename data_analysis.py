@@ -1,8 +1,8 @@
 import logging
-from typing import Iterable
 
 from pyspark.sql import DataFrame, Window
 from pyspark.sql import functions as F
+from typing import Iterator
 
 from data_extraction import extract_data
 from definitions import PREPROCESSED_PATH, APRIORI_THRESHOLD
@@ -40,7 +40,7 @@ def apriori(df: DataFrame, threshold: float, *cols: str, force: bool = False) ->
     return df
 
 
-def apriori_algorithm(df: DataFrame, threshold: int) -> Iterable[DataFrame]:
+def apriori_algorithm(df: DataFrame, threshold: int) -> Iterator[DataFrame]:
     columns = ['actor']
     while not check_empty(df):
         df = apriori(df, threshold, *columns)
@@ -66,3 +66,7 @@ def stats(df: DataFrame) -> None:
 if __name__ == '__main__':
     dataframe = extract_data()
     algorithm = apriori_algorithm(dataframe, APRIORI_THRESHOLD)
+    singleton = next(algorithm)
+    couple = next(algorithm)
+    triplet = next(algorithm)
+    quadruplet = next(algorithm)
