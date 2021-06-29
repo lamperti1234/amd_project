@@ -6,7 +6,7 @@ from definitions import CONFIG, DATASETS, DATASET
 from utils import get_path, set_env_variables, is_empty
 
 
-def _set_api():
+def _set_api() -> None:
     """
     Set kaggle api required configuration from file or ask for them.
 
@@ -29,16 +29,16 @@ def _set_api():
     logging.debug('Set environment variables for Kaggle')
 
 
-def download_dataset(name: str, force: bool = False):
+def download_dataset(name: str, force: bool = False) -> None:
     """
     Download the specified dataset if not already download.
 
     :param name: name of the dataset
     :param force: force downlaod if dataset already exists
     """
-    path = get_path(DATASETS, name, create=True)
-    if not is_empty(path) and not force:
-        logging.warning(f'Dataset {name} already downloaded!')
+    path = get_path(DATASETS, name, create=True, delete=force)
+    if not is_empty(path):
+        logging.info(f'Dataset {name} already downloaded!')
         return
     _set_api()
 
@@ -50,6 +50,4 @@ def download_dataset(name: str, force: bool = False):
 
 
 if __name__ == '__main__':
-    if not DATASET:
-        DATASET = input("Insert dataset name: ")
     download_dataset(DATASET)

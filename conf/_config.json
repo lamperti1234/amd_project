@@ -1,5 +1,6 @@
 {
   "DATASET": "",
+  "APRIORI_THRESHOLD": 0,
   "LOG_FORMAT": "%(levelname)s:%(name)s:%(message)s",
   "LOG_LEVEL": "INFO"
 }

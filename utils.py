@@ -1,24 +1,30 @@
 import os
 import shutil
 
+from datetime import datetime
 from pathlib import Path
-from typing import Any, Union
+from types import FunctionType
+from typing import Any, Union, Callable
 
 
-def get_path(base_path: Union[str, Path], *args: Any, create: bool = False, delete_before_create: bool = False) -> Path:
+def delete_path(path: Union[str, Path]) -> None:
+    shutil.rmtree(path, ignore_errors=True)
+
+
+def get_path(base_path: Union[str, Path], *args: Any, create: bool = False, delete: bool = False) -> Path:
     """
     Join path with default separator. Optionally it can create and/or clean the specified path if it is a folder.
 
     :param base_path: base path to use to new path
     :param args: eventually subfolders
     :param create: create the folder if not exists
-    :param delete_before_create: clear folder if it already exists
+    :param delete: clear folder if it already exists
     :return: the required path
     """
     path = Path(base_path, *[str(arg) for arg in args if arg])
+    if delete:
+        delete_path(path)
     if create:
-        if delete_before_create:
-            shutil.rmtree(path, ignore_errors=True)
         os.makedirs(path, exist_ok=True)
     return path
 
@@ -51,4 +57,18 @@ def is_empty(path: Union[str, Path]) -> bool:
     :param path: path of a folder
     :return:
     """
-    return not bool(os.listdir(path))
+    path = Path(path)
+
+    return not (path.exists() and bool(os.listdir(path)))
+
+
+def timer(func: FunctionType) -> Callable:
+    def wrapper(*args, **kwargs) -> Any:
+        start = datetime.now()
+        result = func(*args, **kwargs)
+        end = datetime.now()
+        print(f'Execution time: {end - start}')
+
+        return result
+
+    return wrapper
