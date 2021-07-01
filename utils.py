@@ -49,7 +49,6 @@ def set_env_variables(**kwargs: Any) -> None:
     Set environment variables.
 
     :param kwargs: dictionary of key-value environment variables
-    :return:
     """
     for key, value in kwargs.items():
         os.environ[key] = str(value)
@@ -60,7 +59,7 @@ def is_empty(path: Union[str, Path]) -> bool:
     Check if a folder is empty.
 
     :param path: path of a folder
-    :return:
+    :return: true if path does not exists of if it has no files
     """
     path = Path(path)
 

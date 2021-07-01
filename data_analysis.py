@@ -21,12 +21,12 @@ def apriori(df: DataFrame, threshold: float, *cols: str, force: bool = False) ->
 
     logging.info(f'Executing apriori algorithm with {cols} and {threshold} as threshold')
 
-    count = Window.partitionBy(*cols)
+    actors_movies = Window.partitionBy(*cols)
     column = cols[-1]
     next_column = f'actor{size}'
 
-    df_with_count = df.withColumn('count', F.count('*').over(count))
-    df_filtered = df_with_count.filter(f'count > {threshold}')
+    df_with_count = df.withColumn('support', F.count('*').over(actors_movies))
+    df_filtered = df_with_count.filter(f'support > {threshold}')
 
     small_df = (df_filtered.select('movie', f'{column}Name', *cols)
                 .withColumnRenamed(column, next_column)
@@ -56,9 +56,9 @@ def stats(df: DataFrame) -> None:
     df.printSchema()
     stat = df.select(
         F.count('*').alias('count'),
-        F.avg('count').alias('avg'),
-        F.max('count').alias('max'),
-        F.min('count').alias('min')
+        F.avg('support').alias('avg'),
+        F.max('support').alias('max'),
+        F.min('support').alias('min')
     )
     stat.show()
 
@@ -67,6 +67,6 @@ if __name__ == '__main__':
     dataframe = extract_data()
     algorithm = apriori_algorithm(dataframe, APRIORI_THRESHOLD)
     singleton = next(algorithm)
-    couple = next(algorithm)
-    triplet = next(algorithm)
-    quadruplet = next(algorithm)
+    doubleton = next(algorithm)
+    triple = next(algorithm)
+    quadruple = next(algorithm)

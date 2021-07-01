@@ -45,7 +45,7 @@ def download_dataset(name: str, force: bool = False) -> None:
     # require authentication before importing
     from kaggle import api
 
-    api.dataset_download_cli(dataset=name, path=path, force=force, unzip=True)
+    api.dataset_download_cli(dataset=name, path=path, unzip=True)
     logging.info(f'Dataset {name} downloaded!')
 
 
