@@ -1,10 +1,14 @@
+import csv
+import logging
 import os
 import shutil
 
 from datetime import datetime
 from pathlib import Path
 from types import FunctionType
-from typing import Any, Union, Callable
+from typing import Any, Union, Callable, List, Iterator
+
+import psutil
 
 
 def delete_path(path: Union[str, Path]) -> None:
@@ -82,3 +86,52 @@ def timer(func: FunctionType) -> Callable:
         return result
 
     return wrapper
+
+
+def memory_used(func: FunctionType) -> Callable:
+    """
+    Calculating memory usage for a specific function.
+
+    :param func: function to be executed
+    :return: wrapper for the function
+    """
+    def wrapper(*args, **kwargs) -> Any:
+        start_mem = psutil.virtual_memory().used
+        result = func(*args, **kwargs)
+        end_mem = psutil.virtual_memory().used
+        print(f'Memory used for {func.__name__ }: {end_mem - start_mem}')
+
+        return result
+
+    return wrapper
+
+
+def read_csvfile(path: Union[str, Path], header: bool = True) -> Iterator[List[str]]:
+    """
+    Read csv file as list of fields skipping header.
+
+    :param path: path to csv file
+    :param header: if header is present
+    :return:
+    """
+    logging.info(f'Reading csv path {path} with header {header}')
+    with open(path) as file:
+        reader = csv.reader(file)
+        if header:
+            # skip header
+            next(reader)
+        for row in reader:
+            yield row
+
+
+def save_csvfile(data: Iterator, path: Union[str, Path]) -> None:
+    """
+    Save an iterator as csv file.
+
+    :param data: dict to save to file
+    :param path: path where save csv file
+    :return:
+    """
+    with open(path, 'w') as file:
+        writer = csv.writer(file)
+        writer.writerows(data)

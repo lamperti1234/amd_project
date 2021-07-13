@@ -11,8 +11,6 @@ ROOT_DIR = str(Path(__file__).parent.absolute())
 CONFIG = get_path(ROOT_DIR, 'conf', create=True)
 DATASETS = get_path(ROOT_DIR, 'datasets', create=True)
 RESULTS = get_path(ROOT_DIR, 'results', create=True)
-TRAINING = get_path(RESULTS, 'training', create=True)
-PREDICTIONS = get_path(RESULTS, 'predictions', create=True)
 
 
 def _update_configs():
@@ -46,11 +44,12 @@ DATASET = ''
 APRIORI_THRESHOLD = 0
 LOG_FORMAT = '%(levelname)s:%(name)s:%(message)s'
 LOG_LEVEL = logging.INFO
+DEBUG = False
 
 # read and update DATASET value
 _update_configs()
 
 DATASET_PATH = get_path(DATASETS, DATASET)
-PREPROCESSED_PATH = get_path(DATASET_PATH, 'preprocessed')
+RAW_PATH = get_path(DATASET_PATH, 'raw')
 
 logging.basicConfig(format=LOG_FORMAT, level=LOG_LEVEL)

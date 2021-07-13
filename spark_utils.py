@@ -2,9 +2,10 @@ import logging
 
 from pathlib import Path
 from pyspark.sql import SparkSession, DataFrame
-from typing import Optional, Union
+from pyspark.sql import functions as F
+from typing import Optional, Union, Dict, Tuple
 
-from utils import timer
+from utils import timer, get_path
 
 
 def get_spark() -> SparkSession:
@@ -53,6 +54,20 @@ def read_csv(path: Union[Path, str], header: bool = True, sep: str = ',') -> Opt
                 .csv(str(path)))
 
     return None
+
+
+@timer
+def save_csv(df: DataFrame, path: Union[Path, str]) -> None:
+    """
+    Save a DataFrame in a csv file.
+
+    :param df: dataframe to be saved
+    :param path: path where to save the file
+    :return:
+    """
+    logging.info(f'Saving csv path {path}')
+
+    df.write.csv(str(path), header=True)
 
 
 def read_parquet(path: Union[Path, str]) -> Optional[DataFrame]:
