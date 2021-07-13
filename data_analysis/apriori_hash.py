@@ -32,7 +32,7 @@ def get_ck(k: int, monotonicity_filter: Callable[[Itemset], bool], threshold: in
     for row in read_csvfile(file):
         raw_actors = [int(actor[2:]) for actor in row[1].split('|')]
         for comb in combinations(sorted(raw_actors), k):
-            if monotonicity_filter(comb) and bitmaps(comb, row[0]):
+            if monotonicity_filter(comb) and bitmaps(comb):
                 accumulator[comb] += 1
         for comb in combinations(sorted(raw_actors), k + 1):
             for counter, hash_function in zip(counters, hash_functions):
@@ -72,7 +72,7 @@ def get_lk(size: int, old_lk: FrequentItemsets, threshold: float, bitmaps: List[
     def monotonicity(itemset: Itemset) -> bool:
         return size == 1 or all([item in old_lk for item in combinations(itemset, size - 1)])
 
-    def check_bitmaps(itemset: Itemset, movie) -> bool:
+    def check_bitmaps(itemset: Itemset) -> bool:
         return all([bitmap[hash_function(buckets, itemset)]] for bitmap, hash_function in zip(bitmaps, hash_functions))
 
     ck, bitmaps = get_ck(size, monotonicity, threshold, check_bitmaps, buckets, *hash_functions)
