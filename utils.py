@@ -6,7 +6,7 @@ import shutil
 from datetime import datetime
 from pathlib import Path
 from types import FunctionType
-from typing import Any, Union, Callable, List, Iterator
+from typing import Any, Union, Callable, Iterator, Tuple
 
 import psutil
 
@@ -106,7 +106,7 @@ def memory_used(func: FunctionType) -> Callable:
     return wrapper
 
 
-def read_csvfile(path: Union[str, Path], header: bool = True) -> Iterator[List[str]]:
+def read_csvfile(path: Union[str, Path], header: bool = True) -> Iterator[Tuple[str, str]]:
     """
     Read csv file as list of fields skipping header.
 

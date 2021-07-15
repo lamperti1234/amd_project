@@ -42,9 +42,11 @@ _params = locals()
 
 DATASET = ''
 APRIORI_THRESHOLD = 0
+SON_CHUNKS = 1
 LOG_FORMAT = '%(levelname)s:%(name)s:%(message)s'
 LOG_LEVEL = logging.INFO
-DEBUG = False
+DUMP = False
+SAVE = False
 
 # read and update DATASET value
 _update_configs()

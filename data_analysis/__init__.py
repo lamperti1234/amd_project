@@ -1,7 +1,7 @@
 import logging
 import os
 from pathlib import Path
-from typing import Tuple, Dict, Union
+from typing import Tuple, Dict, Union, Iterator, Any
 
 from pyspark.sql import DataFrame
 from pyspark.sql import functions as F
@@ -13,6 +13,35 @@ Itemset = Tuple[int, ...]
 CandidateFrequentItemsets = Dict[Itemset, int]
 FrequentItemsets = CandidateFrequentItemsets
 BitMap = Dict[int, bool]
+Transaction = Tuple[str, str]
+
+
+class State:
+    """
+    State of an algorithm.
+    At least k (size of the itemset), lk (frequent itemset) and force (if it is needed to recalculate) are present.
+    """
+
+    def __init__(self, **state):
+        self.state = state
+
+    def __setitem__(self, key: str, value: Any) -> None:
+        self.state[key] = value
+
+    def __getitem__(self, item: str) -> Any:
+        return self.state[item]
+
+    def __add__(self, other: 'State') -> 'State':
+        state = {**self.state}
+        state.update(other.state)
+
+        return State(**state)
+
+    def update(self, other: 'State') -> None:
+        self.state.update(other.state)
+
+
+Algorithm = Iterator[State]
 
 
 @timer

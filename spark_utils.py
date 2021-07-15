@@ -1,11 +1,12 @@
 import logging
 
 from pathlib import Path
-from pyspark.sql import SparkSession, DataFrame
-from pyspark.sql import functions as F
-from typing import Optional, Union, Dict, Tuple
 
-from utils import timer, get_path
+from pyspark import AccumulatorParam
+from pyspark.sql import SparkSession, DataFrame
+from typing import Optional, Union, Dict
+
+from utils import timer
 
 
 def get_spark() -> SparkSession:
@@ -98,3 +99,17 @@ def save_parquet(df: DataFrame, path: Union[Path, str]) -> None:
     logging.info(f'Saving parquet path {path}')
 
     df.write.parquet(str(path))
+
+
+class DictParam(AccumulatorParam):
+    """
+    It allows to have a dict accumulator.
+    """
+
+    def zero(self, value: Dict = None) -> Dict:
+        return {}
+
+    def addInPlace(self, value1: Dict, value2: Dict) -> Dict:
+        value1.update(value2)
+
+        return value1

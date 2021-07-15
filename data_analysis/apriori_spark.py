@@ -2,11 +2,10 @@ import logging
 
 from pyspark.sql import DataFrame, Window
 from pyspark.sql import functions as F
-from typing import Iterator
 
-from data_analysis import dump_frequent_itemsets_stats
+from data_analysis import dump_frequent_itemsets_stats, State, Algorithm
 from data_extraction import extract_data
-from definitions import RESULTS, APRIORI_THRESHOLD
+from definitions import RESULTS, APRIORI_THRESHOLD, SAVE, DUMP
 from spark_utils import check_empty, save_parquet, read_parquet
 from utils import get_path, is_empty
 
@@ -38,16 +37,18 @@ def get_ck(df: DataFrame, *cols: str) -> DataFrame:
     return df.join(small_df, on=join_cond).filter(f'{column} < {next_column}').persist()
 
 
-def get_lk(df: DataFrame, threshold: float, *cols: str, force: bool = False) -> DataFrame:
+def get_lk(df: DataFrame, state: State) -> DataFrame:
     """
     Extract frequent itemsets from candidate itemsets.
 
     :param df: dataframe which contains candidate itemsets
-    :param threshold: threshold value to consider candidate itemset as frequent itemset
-    :param cols: columns needed to create new itemsets
-    :param force: to force recalculating frequent itemsets
+    :param state: state of the algorithm
     """
-    size = len(cols)
+    threshold = state['threshold']
+    size = state['k']
+    cols = [f'actor{i}' for i in range(1, size + 1)]
+    force = state['force']
+
     path = get_path(RESULTS, f'apriori_{threshold}_{size}', 'parquet', delete=force)
 
     if not is_empty(path):
@@ -62,41 +63,48 @@ def get_lk(df: DataFrame, threshold: float, *cols: str, force: bool = False) -> 
     df = get_ck(df, *cols[:-1])
 
     df_with_count = df.withColumn('support', F.count('*').over(actors_movies))
-    df = df_with_count.filter(f'support > {threshold}')
-    save_parquet(df, path)
+    df = df_with_count.filter(f'support >= {threshold}')
+    # dataframe has movie column so without distinct there are duplicates
+    logging.info(f'Found {df.select(*cols).distinct().count()} frequent itemsets')
+
+    if SAVE:
+        save_parquet(df, path)
+
     return df
 
 
-def apriori_algorithm(df: DataFrame, threshold: int, force: bool = False) -> Iterator[DataFrame]:
+def apriori_algorithm(df: DataFrame, state: State) -> Algorithm:
     """
-    Executing apriori algorith starting from data and a given threshold.
+    Executing apriori algorithm starting from data and a given threshold.
 
     :param df: data to be analyzed
-    :param threshold: threshold for the apriori algorithm
-    :param force: to force recalculating frequent itemsets
+    :param state: state of the algorithm:
+        - threshold: threshold for the apriori algorithm
+        - force: to force recalculating frequent itemsets
     :return: dataframe with frequent itemsets
     """
-    columns = ['actor1']
+    state = State(k=1) + state
     while not check_empty(df):
-        df = get_lk(df, threshold, *columns, force=force)
+        df = get_lk(df, state)
+        state['k'] += 1
+        state['df'] = df
 
-        yield df
-
-        columns.append(f'actor{len(columns) + 1}')
+        yield state
 
 
 if __name__ == '__main__':
     dataframe = extract_data()
-    algorithm = apriori_algorithm(dataframe, APRIORI_THRESHOLD, force=True)
+    algorithm = apriori_algorithm(dataframe, State(threshold=APRIORI_THRESHOLD, force=True))
 
-    singleton = next(algorithm)
-    doubleton = next(algorithm)
-    triple = next(algorithm)
-    quadruple = next(algorithm)
-    quintuple = next(algorithm)
+    singleton = next(algorithm)['df']
+    doubleton = next(algorithm)['df']
+    triple = next(algorithm)['df']
+    quadruple = next(algorithm)['df']
+    quintuple = next(algorithm)['df']
 
-    dump_frequent_itemsets_stats(singleton, 1)
-    dump_frequent_itemsets_stats(doubleton, 2)
-    dump_frequent_itemsets_stats(triple, 3)
-    dump_frequent_itemsets_stats(quadruple, 4)
-    dump_frequent_itemsets_stats(quintuple, 5)
+    if DUMP:
+        dump_frequent_itemsets_stats(singleton, 1)
+        dump_frequent_itemsets_stats(doubleton, 2)
+        dump_frequent_itemsets_stats(triple, 3)
+        dump_frequent_itemsets_stats(quadruple, 4)
+        dump_frequent_itemsets_stats(quintuple, 5)
