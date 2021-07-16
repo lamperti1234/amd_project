@@ -2,7 +2,7 @@ import logging
 
 from pathlib import Path
 
-from pyspark import AccumulatorParam
+from pyspark import AccumulatorParam, RDD
 from pyspark.sql import SparkSession, DataFrame
 from typing import Optional, Union, Dict
 
@@ -32,6 +32,27 @@ def check_empty(df: DataFrame) -> bool:
     return df.take(1).count == 0
 
 
+def read_csv_rdd(path: Union[Path, str], sep: str = ',') -> Optional[RDD]:
+    """
+        Read a csv file and put it on a RDD. It returns None if no such path exists.
+
+        :param path: path to csv file
+        :param sep: separator used in csv file
+        :return: dataframe from selected path
+        """
+    logging.info(f'Reading csv path {path} with sep:{sep}')
+
+    path = Path(path)
+    if path.exists():
+        return (get_spark()
+                .sparkContext
+                .textFile(str(path))
+                .map(lambda row: row.split(sep))
+                )
+
+    return None
+
+
 def read_csv(path: Union[Path, str], header: bool = True, sep: str = ',') -> Optional[DataFrame]:
     """
     Read a csv file and put it on a DataFrame. It will escape quote to allow reading multiple lines column.
@@ -58,17 +79,18 @@ def read_csv(path: Union[Path, str], header: bool = True, sep: str = ',') -> Opt
 
 
 @timer
-def save_csv(df: DataFrame, path: Union[Path, str]) -> None:
+def save_csv(df: DataFrame, path: Union[Path, str], header: bool = True) -> None:
     """
     Save a DataFrame in a csv file.
 
     :param df: dataframe to be saved
     :param path: path where to save the file
+    :param header: if csv file will have an header
     :return:
     """
     logging.info(f'Saving csv path {path}')
 
-    df.write.csv(str(path), header=True)
+    df.write.csv(str(path), header=header)
 
 
 def read_parquet(path: Union[Path, str]) -> Optional[DataFrame]:

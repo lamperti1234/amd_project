@@ -31,6 +31,7 @@ def get_ck(transactions: Iterator[Transaction], k: int,
     return accumulator
 
 
+@timer
 @memory_used
 def get_lk(transactions: Iterator[Transaction], state: State) -> FrequentItemsets:
     """

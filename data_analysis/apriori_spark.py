@@ -7,9 +7,10 @@ from data_analysis import dump_frequent_itemsets_stats, State, Algorithm
 from data_extraction import extract_data
 from definitions import RESULTS, APRIORI_THRESHOLD, SAVE, DUMP
 from spark_utils import check_empty, save_parquet, read_parquet
-from utils import get_path, is_empty
+from utils import get_path, is_empty, timer
 
 
+@timer
 def get_ck(df: DataFrame, *cols: str) -> DataFrame:
     """
     Extract candidate sets of lenght + 1 with respect to existing itemsets.
@@ -37,6 +38,7 @@ def get_ck(df: DataFrame, *cols: str) -> DataFrame:
     return df.join(small_df, on=join_cond).filter(f'{column} < {next_column}').persist()
 
 
+@timer
 def get_lk(df: DataFrame, state: State) -> DataFrame:
     """
     Extract frequent itemsets from candidate itemsets.

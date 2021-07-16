@@ -1,25 +1,27 @@
 import logging
 from collections import defaultdict
 from itertools import combinations
-from typing import Iterable, Tuple
+from typing import Iterable, Tuple, Callable, Any, Set
 
 from pyspark import RDD, Broadcast, Accumulator
 
-from data_analysis import find_csv, CandidateFrequentItemsets, Transaction, FrequentItemsets, read_frequent_itemsets, \
-    save_frequent_itemsets, Itemset, dump_frequent_itemsets_stats, create_temp_df, Algorithm, State
+from data_analysis import find_csv, CandidateFrequentItemsets, Transaction, FrequentItemsets, Itemset, \
+    dump_frequent_itemsets_stats, create_temp_df, Algorithm, State, read_frequent_itemsets, save_frequent_itemsets
 from data_analysis.apriori import apriori_algorithm
-from definitions import RAW_PATH, SON_CHUNKS, RESULTS, APRIORI_THRESHOLD, DATASET_PATH, SAVE, DUMP
-from spark_utils import read_csv, get_spark, DictParam
+from definitions import RAW_PATH, SON_CHUNKS, APRIORI_THRESHOLD, DATASET_PATH, DUMP, RESULTS, SAVE
+from spark_utils import read_csv, get_spark, DictParam, read_csv_rdd
 from utils import get_path, timer, memory_used, is_empty
 
 
 @timer
 @memory_used
-def get_ck(rdd: RDD, old_state: Broadcast, new_state: Accumulator) -> CandidateFrequentItemsets:
+def get_ck(rdd: RDD, algorithm: Callable[[Any, ...], Algorithm],
+           old_state: Broadcast, new_state: Accumulator) -> Set[Itemset]:
     """
     Scan the chunk and extract candidate frequent itemsets.
 
     :param rdd: rdd which contains transactions
+    :param algorithm: algorithm to extract frequent itemsets
     :param old_state: previous state of the algorithm
     :param new_state: next state of the algorithm
     :return: candidate frequent itemsets
@@ -31,7 +33,7 @@ def get_ck(rdd: RDD, old_state: Broadcast, new_state: Accumulator) -> CandidateF
             buckets = [bucket for bucket in transactions]
             state = old_state.value
             state['threshold'] *= len(buckets) / old_state.value['n']
-            alg = old_state.value['algorithm'](lambda: buckets, State(**old_state.value))
+            alg = algorithm(lambda: buckets, State(**old_state.value))
             new_state.add({
                 name: state
             })
@@ -39,21 +41,24 @@ def get_ck(rdd: RDD, old_state: Broadcast, new_state: Accumulator) -> CandidateF
             state = old_state.value[name]
             state['k'] = old_state.value['k']
             state['lk'] = old_state.value['lk']
-            alg = old_state.value['algorithm'](lambda: transactions, State(**state))
+            alg = algorithm(lambda: transactions, State(**state))
 
         state = next(alg)
         new_state.add({name: state.state})
         return {itemset: 1 for itemset in state['lk'].items()}
 
-    return rdd.mapPartitionsWithIndex(apply_algorithm).reduceByKey(lambda x, y: x).map(lambda x: x[0]).collect()
+    # set is useful to lookup. RDD cannot be used inside mapPartitions
+    return set(rdd.mapPartitionsWithIndex(apply_algorithm).map(lambda x: x[0]).collect())
 
 
+@timer
 @memory_used
-def get_lk(rdd: RDD, state: State) -> FrequentItemsets:
+def get_lk(rdd: RDD, algorithm: Callable[[Any, ...], Algorithm], state: State) -> FrequentItemsets:
     """
     Extract frequent itemsets checking the support.
 
     :param rdd: rdd which contains transactions
+    :param algorithm: algorithm to extract frequent itemsets
     :param state: previous state of the algorithm
     :return:
     """
@@ -72,7 +77,7 @@ def get_lk(rdd: RDD, state: State) -> FrequentItemsets:
 
     old_state = get_spark().sparkContext.broadcast(state.state)
     new_state = get_spark().sparkContext.accumulator(state.state, DictParam())
-    ck = get_spark().sparkContext.broadcast(get_ck(rdd, old_state, new_state))
+    ck = get_spark().sparkContext.broadcast(get_ck(rdd, algorithm, old_state, new_state))
     state.update(State(**new_state.value))
 
     def get_support(transactions: Iterable[Transaction]) -> Iterable[Tuple[Itemset, int]]:
@@ -96,24 +101,24 @@ def get_lk(rdd: RDD, state: State) -> FrequentItemsets:
     return lk
 
 
-def son_algorithm(rdd: RDD, state: State) -> Algorithm:
+def son_algorithm(rdd: RDD, algorithm: Callable[[Any, ...], Algorithm], state: State) -> Algorithm:
     """
     Executing son algorithm starting from data and a given threshold.
 
     :param rdd: dataframe which contains transactions
+    :param algorithm: algorithm to extract frequent itemsets
     :param state: state of the algorithm:
         - threshold: threshold for the algorithm
         - k: size of the itemsets
         - lk: frequent itemsets with size k-1
         - n: number of distinct buckets
         - force: to force recalculating frequent itemsets
-        - algorithm: algorithm to extract frequent itemsets
     :return: dict of frequent itemsets
     """
     state = State(n=rdd.count(), chunks=rdd.getNumPartitions(), k=1, lk={}) + state
 
     while state['k'] == 1 or state['lk']:
-        state['lk'] = get_lk(rdd, state)
+        state['lk'] = get_lk(rdd, algorithm, state)
         state['k'] += 1
 
         yield state
@@ -122,9 +127,9 @@ def son_algorithm(rdd: RDD, state: State) -> Algorithm:
 if __name__ == '__main__':
     file = find_csv(get_path(RAW_PATH, 'csv'))
 
-    data = read_csv(file).repartition(SON_CHUNKS).rdd.map(lambda row: (row['movie'], row['actors'])).persist()
+    data = read_csv_rdd(file).repartition(SON_CHUNKS).map(lambda row: (row[0], row[1])).persist()
 
-    algorithm = son_algorithm(data, State(threshold=APRIORI_THRESHOLD, force=True, algorithm=apriori_algorithm))
+    algorithm = son_algorithm(data, apriori_algorithm, State(threshold=APRIORI_THRESHOLD, force=True))
 
     singleton = next(algorithm)['lk']
     doubleton = next(algorithm)['lk']

@@ -48,10 +48,10 @@ def extract_data(force: bool = False) -> DataFrame:
     save_csv(df.select('movie', 'actor1')
              .groupBy('movie').agg(F.collect_list('actor1').alias('actors'))
              .withColumn('actors', F.concat_ws('|', 'actors'))
-             .coalesce(1), raw_csv)
+             .coalesce(1), raw_csv, header=False)
 
     return df
 
 
 if __name__ == '__main__':
-    extract_data().show()
+    extract_data(force=True).show()

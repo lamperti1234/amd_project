@@ -121,7 +121,7 @@ def read_frequent_itemsets(path: Union[str, Path]) -> FrequentItemsets:
     """
     path = get_path(path, 'results.csv')
 
-    return {tuple([int(item) for item in row[0].split('|')]): int(row[1]) for row in read_csvfile(path, header=False)}
+    return {tuple([int(item) for item in row[0].split('|')]): int(row[1]) for row in read_csvfile(path)}
 
 
 def save_frequent_itemsets(itemsets: FrequentItemsets, path: Union[str, Path]) -> None:

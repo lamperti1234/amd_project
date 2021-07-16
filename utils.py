@@ -106,20 +106,16 @@ def memory_used(func: FunctionType) -> Callable:
     return wrapper
 
 
-def read_csvfile(path: Union[str, Path], header: bool = True) -> Iterator[Tuple[str, str]]:
+def read_csvfile(path: Union[str, Path]) -> Iterator[Tuple[str, str]]:
     """
     Read csv file as list of fields skipping header.
 
     :param path: path to csv file
-    :param header: if header is present
     :return:
     """
-    logging.info(f'Reading csv path {path} with header {header}')
+    logging.info(f'Reading csv path {path}')
     with open(path) as file:
         reader = csv.reader(file)
-        if header:
-            # skip header
-            next(reader)
         for row in reader:
             yield row
 

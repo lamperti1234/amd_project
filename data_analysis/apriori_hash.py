@@ -47,6 +47,7 @@ def get_ck(transactions: Iterator[Transaction], monotonicity_filter: Callable[[I
     ]
 
 
+@timer
 @memory_used
 def get_lk(transactions: Iterator[Transaction], state: State) -> Tuple[FrequentItemsets, List[BitMap]]:
     """
