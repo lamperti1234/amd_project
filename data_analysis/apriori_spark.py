@@ -39,13 +39,13 @@ def get_ck(df: DataFrame, *cols: str) -> DataFrame:
 
 
 @timer
-def get_lk(df: DataFrame, state: State) -> DataFrame:
+def get_lk(state: State) -> DataFrame:
     """
     Extract frequent itemsets from candidate itemsets.
 
-    :param df: dataframe which contains candidate itemsets
     :param state: state of the algorithm
     """
+    df = state['df']
     threshold = state['threshold']
     size = state['k']
     cols = [f'actor{i}' for i in range(1, size + 1)]
@@ -75,28 +75,27 @@ def get_lk(df: DataFrame, state: State) -> DataFrame:
     return df
 
 
-def apriori_algorithm(df: DataFrame, state: State) -> Algorithm:
+def apriori_algorithm(state: State) -> Algorithm:
     """
     Executing apriori algorithm starting from data and a given threshold.
 
-    :param df: data to be analyzed
-    :param state: state of the algorithm:
+    :param state: state of the algorithm
+        - df: dataframe which contains candidate itemsets
         - threshold: threshold for the apriori algorithm
         - force: to force recalculating frequent itemsets
     :return: dataframe with frequent itemsets
     """
     state = State(k=1) + state
-    while not check_empty(df):
-        df = get_lk(df, state)
+    while not check_empty(state['df']):
+        state['df'] = get_lk(state)
         state['k'] += 1
-        state['df'] = df
 
         yield state
 
 
 if __name__ == '__main__':
     dataframe = extract_data()
-    algorithm = apriori_algorithm(dataframe, State(threshold=APRIORI_THRESHOLD, force=True))
+    algorithm = apriori_algorithm(State(df=dataframe, threshold=APRIORI_THRESHOLD, force=True))
 
     singleton = next(algorithm)['df']
     doubleton = next(algorithm)['df']

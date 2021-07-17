@@ -81,7 +81,7 @@ def timer(func: FunctionType) -> Callable:
         start = datetime.now()
         result = func(*args, **kwargs)
         end = datetime.now()
-        print(f'Execution time: {end - start}')
+        print(f'Execution time for {func.__name__}: {end - start}')
 
         return result
 

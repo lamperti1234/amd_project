@@ -28,18 +28,14 @@ def get_ck(rdd: RDD, algorithm: Callable[[Any, ...], Algorithm],
     """
 
     def apply_algorithm(index: int, transactions: Iterable[Transaction]) -> CandidateFrequentItemsets:
-        name = f'algorithms_{index}'
+        name = f'partitions_{index}'
         if name not in old_state.value:
             buckets = [bucket for bucket in transactions]
             state = old_state.value
             state['threshold'] *= len(buckets) / old_state.value['n']
             alg = algorithm(lambda: buckets, State(**old_state.value))
-            new_state.add({
-                name: state
-            })
         else:
             state = old_state.value[name]
-            state['k'] = old_state.value['k']
             state['lk'] = old_state.value['lk']
             alg = algorithm(lambda: transactions, State(**state))
 
