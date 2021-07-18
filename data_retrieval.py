@@ -3,7 +3,7 @@ import logging
 import os
 
 from definitions import CONFIG, DATASETS, DATASET
-from utils import get_path, set_env_variables, is_empty
+from utils import get_path, set_env_variables, is_empty, timer
 
 
 def _set_api() -> None:
@@ -29,6 +29,7 @@ def _set_api() -> None:
     logging.debug('Set environment variables for Kaggle')
 
 
+@timer
 def download_dataset(name: str, force: bool = False) -> None:
     """
     Download the specified dataset if not already download.

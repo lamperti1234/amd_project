@@ -5,9 +5,10 @@ from pyspark.sql import functions as F
 
 from definitions import DATASET_PATH, RAW_PATH
 from spark_utils import read_csv, save_parquet, read_parquet, save_csv
-from utils import get_path, is_empty
+from utils import get_path, is_empty, timer
 
 
+@timer
 def extract_data(force: bool = False) -> DataFrame:
     """
     Extract dataframe using movies, actors and names.
