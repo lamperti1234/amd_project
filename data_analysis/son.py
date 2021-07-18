@@ -33,10 +33,12 @@ def get_ck(rdd: RDD, algorithm: Callable[[Any, ...], Algorithm],
             buckets = [bucket for bucket in transactions]
             state = old_state.value
             state['threshold'] *= len(buckets) / old_state.value['n']
+            state['save'] = False
             alg = algorithm(lambda: buckets, State(**old_state.value))
         else:
             state = old_state.value[name]
             state['lk'] = old_state.value['lk']
+            state['save'] = False
             alg = algorithm(lambda: transactions, State(**state))
 
         state = next(alg)
@@ -62,7 +64,7 @@ def get_lk(rdd: RDD, algorithm: Callable[[Any, ...], Algorithm], state: State) -
     size = state['k']
     force = state['force']
 
-    path = get_path(RESULTS, f'apriori_{threshold}_{size}', 'csv', delete=force)
+    path = get_path(RESULTS, f'apriori_{threshold}_{size}', 'csv', 'son', delete=force)
 
     if not is_empty(path):
         logging.info('Reading already extracted data')
@@ -91,7 +93,7 @@ def get_lk(rdd: RDD, algorithm: Callable[[Any, ...], Algorithm], state: State) -
               .collect())
     logging.info(f'Found {len(lk)} frequent itemsets')
 
-    if SAVE:
+    if state['save']:
         save_frequent_itemsets(lk, path)
 
     return lk
@@ -111,7 +113,7 @@ def son_algorithm(rdd: RDD, algorithm: Callable[[Any, ...], Algorithm], state: S
         - force: to force recalculating frequent itemsets
     :return: dict of frequent itemsets
     """
-    state = State(n=rdd.count(), chunks=rdd.getNumPartitions(), k=1, lk={}) + state
+    state = State(n=rdd.count(), chunks=rdd.getNumPartitions(), k=1, lk={}, force=False, save=SAVE) + state
 
     while state['k'] == 1 or state['lk']:
         state['lk'] = get_lk(rdd, algorithm, state)
@@ -125,7 +127,7 @@ if __name__ == '__main__':
 
     data = read_csv_rdd(file).repartition(SON_CHUNKS).map(lambda row: (row[0], row[1])).persist()
 
-    algorithm = son_algorithm(data, apriori_algorithm, State(threshold=APRIORI_THRESHOLD, force=True))
+    algorithm = son_algorithm(data, apriori_algorithm, State(threshold=APRIORI_THRESHOLD))
 
     singleton = next(algorithm)['lk']
     doubleton = next(algorithm)['lk']

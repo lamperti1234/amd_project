@@ -55,7 +55,7 @@ def get_lk(transactions: Iterator[Transaction], sample: List[Transaction], state
     threshold = threshold_adjust * len(sample) / n * state['threshold']
     force = state['force']
 
-    path = get_path(RESULTS, f'apriori_{threshold}_{size}', 'csv', delete=force)
+    path = get_path(RESULTS, f'apriori_{threshold}_{size}', 'csv', 'toivonen', delete=force)
 
     if not is_empty(path):
         logging.info('Reading already extracted data')
@@ -96,10 +96,10 @@ def get_lk(transactions: Iterator[Transaction], sample: List[Transaction], state
 
     logging.info(f'Found {len(lk)} frequent itemsets')
 
-    if SAVE:
-        save_frequent_itemsets(lk, path)
+    if state['save']:
+        save_frequent_itemsets(real_lk, path)
 
-    return lk
+    return real_lk
 
 
 def sampling(df: DataFrame, k: int) -> DataFrame:
@@ -154,7 +154,7 @@ def toivonen_algorithm(transactions: Callable[[], Iterator[Transaction]],
         - force: to force recalculating frequent itemsets
     :return: dict of frequent itemsets
     """
-    state = State(k=1, lk={}) + state
+    state = State(k=1, lk={}, force=False, save=SAVE) + state
 
     while state['k'] == 1 or state['lk']:
         state['lk'] = get_lk(transactions(), sample, state)
@@ -176,7 +176,7 @@ if __name__ == '__main__':
         sample = [(row['_c0'], row['_c1']) for row in sampling(df1, TOIVONEN_SIZE_SAMPLE).collect()]
         algorithm = toivonen_algorithm(lambda: read_csvfile(file), sample,
                                        State(threshold_adjust=TOIVONEN_THRESHOLD_ADJUST,
-                                             threshold=APRIORI_THRESHOLD, n=n, force=True))
+                                             threshold=APRIORI_THRESHOLD, n=n))
         try:
             singleton = next(algorithm)['lk']
             doubleton = next(algorithm)['lk']

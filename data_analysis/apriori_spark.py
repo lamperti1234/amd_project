@@ -51,7 +51,7 @@ def get_lk(state: State) -> DataFrame:
     cols = [f'actor{i}' for i in range(1, size + 1)]
     force = state['force']
 
-    path = get_path(RESULTS, f'apriori_{threshold}_{size}', 'parquet', delete=force)
+    path = get_path(RESULTS, f'apriori_{threshold}_{size}', 'parquet', 'apriori', delete=force)
 
     if not is_empty(path):
         logging.info('Reading already extracted data')
@@ -69,7 +69,7 @@ def get_lk(state: State) -> DataFrame:
     # dataframe has movie column so without distinct there are duplicates
     logging.info(f'Found {df.select(*cols).distinct().count()} frequent itemsets')
 
-    if SAVE:
+    if state['save']:
         save_parquet(df, path)
 
     return df
@@ -85,7 +85,7 @@ def apriori_algorithm(state: State) -> Algorithm:
         - force: to force recalculating frequent itemsets
     :return: dataframe with frequent itemsets
     """
-    state = State(k=1) + state
+    state = State(k=1, force=False, save=SAVE) + state
     while not check_empty(state['df']):
         state['df'] = get_lk(state)
         state['k'] += 1
@@ -95,7 +95,7 @@ def apriori_algorithm(state: State) -> Algorithm:
 
 if __name__ == '__main__':
     dataframe = extract_data()
-    algorithm = apriori_algorithm(State(df=dataframe, threshold=APRIORI_THRESHOLD, force=True))
+    algorithm = apriori_algorithm(State(df=dataframe, threshold=APRIORI_THRESHOLD))
 
     singleton = next(algorithm)['df']
     doubleton = next(algorithm)['df']

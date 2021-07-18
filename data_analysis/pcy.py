@@ -65,7 +65,7 @@ def get_lk(transactions: Iterator[Transaction], state: State) -> Tuple[FrequentI
     hash_functions = state['hash_functions']
     force = state['force']
 
-    path = get_path(RESULTS, f'apriori_{threshold}_{size}', 'csv', delete=force)
+    path = get_path(RESULTS, f'apriori_{threshold}_{size}', 'csv', 'pcy', delete=force)
 
     if not is_empty(path):
         logging.info('Reading already extracted data')
@@ -87,7 +87,7 @@ def get_lk(transactions: Iterator[Transaction], state: State) -> Tuple[FrequentI
           if support >= threshold}
     logging.info(f'Found {len(lk)} frequent itemsets')
 
-    if SAVE:
+    if state['save']:
         save_frequent_itemsets(lk, path)
 
     return lk, bitmaps
@@ -111,7 +111,7 @@ def apriori_algorithm(transactions: Callable[[], Iterator[Transaction]], state: 
     """
     length = len(state['hash_functions'])
     buckets = int(psutil.virtual_memory().free * 0.7 / length)
-    state = State(k=1, lk={}, bitmaps=[], old_buckets=buckets, buckets=buckets) + state
+    state = State(k=1, lk={}, bitmaps=[], old_buckets=buckets, buckets=buckets, force=False, save=SAVE) + state
 
     while state['k'] == 1 or state['lk']:
         lk, bitmaps = get_lk(transactions(), state)
@@ -144,7 +144,7 @@ def hash_function2(buckets: int, itemset: Itemset) -> int:
 if __name__ == '__main__':
     file = find_csv(get_path(RAW_PATH, 'csv'))
 
-    algorithm = apriori_algorithm(lambda: read_csvfile(file), State(threshold=APRIORI_THRESHOLD, force=True,
+    algorithm = apriori_algorithm(lambda: read_csvfile(file), State(threshold=APRIORI_THRESHOLD,
                                                                     hash_functions=(hash_function1, hash_function2)))
 
     singleton = next(algorithm)['lk']
