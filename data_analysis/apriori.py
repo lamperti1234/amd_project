@@ -6,12 +6,11 @@ from typing import Callable, Iterator
 from data_analysis import CandidateFrequentItemsets, FrequentItemsets, read_frequent_itemsets, save_frequent_itemsets, \
     find_csv, dump_frequent_itemsets_stats, create_temp_df, Itemset, Transaction, Algorithm, State
 from definitions import RAW_PATH, APRIORI_THRESHOLD, RESULTS, DATASET_PATH, SAVE, DUMP
-from spark_utils import read_csv
-from utils import timer, get_path, is_empty, read_csvfile, memory_used
+from spark_utils import read_csv_df
+from utils import timer, get_path, is_empty, read_csvfile
 
 
 @timer
-@memory_used
 def get_ck(transactions: Iterator[Transaction], k: int,
            monotonicity_filter: Callable[[Itemset], int]) -> CandidateFrequentItemsets:
     """
@@ -32,7 +31,6 @@ def get_ck(transactions: Iterator[Transaction], k: int,
 
 
 @timer
-@memory_used
 def get_lk(transactions: Iterator[Transaction], state: State) -> FrequentItemsets:
     """
     Extract frequent itemsets checking the support.
@@ -105,7 +103,7 @@ if __name__ == '__main__':
     quintuple = next(algorithm)['lk']
 
     if DUMP:
-        names = read_csv(get_path(DATASET_PATH, 'name.basics.tsv.gz'), sep='\t')
+        names = read_csv_df(get_path(DATASET_PATH, 'name.basics.tsv.gz'), sep='\t')
         dump_frequent_itemsets_stats(create_temp_df(singleton, names), 1)
         dump_frequent_itemsets_stats(create_temp_df(doubleton, names), 2)
         dump_frequent_itemsets_stats(create_temp_df(triple, names), 3)

@@ -17,8 +17,6 @@ def get_spark() -> SparkSession:
     """
     return (SparkSession.builder
             .appName('amd')
-            .config('spark.driver.memory', '5g')
-            .config('spark.executor.memory', '5g')
             .getOrCreate())
 
 
@@ -53,7 +51,7 @@ def read_csv_rdd(path: Union[Path, str], sep: str = ',') -> Optional[RDD]:
     return None
 
 
-def read_csv(path: Union[Path, str], header: bool = True, sep: str = ',') -> Optional[DataFrame]:
+def read_csv_df(path: Union[Path, str], header: bool = True, sep: str = ',') -> Optional[DataFrame]:
     """
     Read a csv file and put it on a DataFrame. It will escape quote to allow reading multiple lines column.
     It returns None if no such path exists.
@@ -79,7 +77,7 @@ def read_csv(path: Union[Path, str], header: bool = True, sep: str = ',') -> Opt
 
 
 @timer
-def save_csv(df: DataFrame, path: Union[Path, str], header: bool = True) -> None:
+def save_csv_df(df: DataFrame, path: Union[Path, str], header: bool = True) -> None:
     """
     Save a DataFrame in a csv file.
 

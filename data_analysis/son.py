@@ -9,12 +9,11 @@ from data_analysis import find_csv, CandidateFrequentItemsets, Transaction, Freq
     dump_frequent_itemsets_stats, create_temp_df, Algorithm, State, read_frequent_itemsets, save_frequent_itemsets
 from data_analysis.apriori import apriori_algorithm
 from definitions import RAW_PATH, SON_CHUNKS, APRIORI_THRESHOLD, DATASET_PATH, DUMP, RESULTS, SAVE
-from spark_utils import read_csv, get_spark, DictParam, read_csv_rdd
-from utils import get_path, timer, memory_used, is_empty
+from spark_utils import read_csv_df, get_spark, DictParam, read_csv_rdd
+from utils import get_path, timer, is_empty
 
 
 @timer
-@memory_used
 def get_ck(rdd: RDD, algorithm: Callable[[Any, ...], Algorithm],
            old_state: Broadcast, new_state: Accumulator) -> Set[Itemset]:
     """
@@ -50,7 +49,6 @@ def get_ck(rdd: RDD, algorithm: Callable[[Any, ...], Algorithm],
 
 
 @timer
-@memory_used
 def get_lk(rdd: RDD, algorithm: Callable[[Any, ...], Algorithm], state: State) -> FrequentItemsets:
     """
     Extract frequent itemsets checking the support.
@@ -136,7 +134,7 @@ if __name__ == '__main__':
     quintuple = next(algorithm)['lk']
 
     if DUMP:
-        names = read_csv(get_path(DATASET_PATH, 'name.basics.tsv.gz'), sep='\t')
+        names = read_csv_df(get_path(DATASET_PATH, 'name.basics.tsv.gz'), sep='\t')
         dump_frequent_itemsets_stats(create_temp_df(singleton, names), 1)
         dump_frequent_itemsets_stats(create_temp_df(doubleton, names), 2)
         dump_frequent_itemsets_stats(create_temp_df(triple, names), 3)

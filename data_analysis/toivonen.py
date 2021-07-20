@@ -12,12 +12,11 @@ from data_analysis import Transaction, Itemset, CandidateFrequentItemsets, State
     read_frequent_itemsets, save_frequent_itemsets, Algorithm, find_csv, dump_frequent_itemsets_stats, create_temp_df
 from definitions import RESULTS, SAVE, RAW_PATH, TOIVONEN_SIZE_SAMPLE, APRIORI_THRESHOLD, TOIVONEN_THRESHOLD_ADJUST, \
     TOIVONEN_MAX_ITERATIONS, DUMP, DATASET_PATH
-from spark_utils import get_spark, read_csv
-from utils import timer, memory_used, get_path, is_empty, read_csvfile
+from spark_utils import get_spark, read_csv_df
+from utils import timer, get_path, is_empty, read_csvfile
 
 
 @timer
-@memory_used
 def get_ck(transactions: Iterator[Transaction], k: int,
            monotonicity_filter: Callable[[Itemset], int]) -> CandidateFrequentItemsets:
     """
@@ -38,7 +37,6 @@ def get_ck(transactions: Iterator[Transaction], k: int,
 
 
 @timer
-@memory_used
 def get_lk(transactions: Iterator[Transaction], sample: List[Transaction], state: State) -> Optional[FrequentItemsets]:
     """
     Extract frequent itemsets checking the support.
@@ -168,7 +166,7 @@ def toivonen_algorithm(transactions: Callable[[], Iterator[Transaction]],
 if __name__ == '__main__':
     file = find_csv(get_path(RAW_PATH, 'csv'))
 
-    df1 = read_csv(file, header=False)
+    df1 = read_csv_df(file, header=False)
     n = df1.count()
 
     for i in range(TOIVONEN_MAX_ITERATIONS):
@@ -186,7 +184,7 @@ if __name__ == '__main__':
             print('Toivonen completed')
 
             if DUMP:
-                names = read_csv(get_path(DATASET_PATH, 'name.basics.tsv.gz'), sep='\t')
+                names = read_csv_df(get_path(DATASET_PATH, 'name.basics.tsv.gz'), sep='\t')
                 dump_frequent_itemsets_stats(create_temp_df(singleton, names), 1)
                 dump_frequent_itemsets_stats(create_temp_df(doubleton, names), 2)
                 dump_frequent_itemsets_stats(create_temp_df(triple, names), 3)
