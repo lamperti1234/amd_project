@@ -1,5 +1,7 @@
 Progetto per il corso Algorithms for Massive Dataset dell'Università degli Studi Statale di Milano 2020/21
 
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/lamperti1234/amd_project/blob/master/AMD_project.ipynb)
+
 # Credenziali Kaggle
 
 Al fine di scaricare un dataset da Kaggle è necessario specificare, in un file `kaggle.json` le credenziali necessarie:
